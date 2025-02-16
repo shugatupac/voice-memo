@@ -1,10 +1,14 @@
 import { AssemblyAI } from "assemblyai";
 
 const client = new AssemblyAI({
-  apiKey: import.meta.env.VITE_ASSEMBLYAI_API_KEY,
+  apiKey: import.meta.env.VITE_ASSEMBLYAI_API_KEY || "",
 });
 
 export async function transcribeAudio(audioBlob: Blob): Promise<string> {
+  if (!import.meta.env.VITE_ASSEMBLYAI_API_KEY) {
+    throw new Error("AssemblyAI API key is not configured");
+  }
+
   try {
     // First, upload the audio file
     const uploadResponse = await client.files.upload(audioBlob);
@@ -26,6 +30,7 @@ export async function transcribeAudio(audioBlob: Blob): Promise<string> {
       }
       await new Promise((resolve) => setTimeout(resolve, 1000));
     }
+
     return result.text || "";
   } catch (error) {
     console.error("AssemblyAI transcription error:", error);

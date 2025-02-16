@@ -5,9 +5,11 @@ export const anthropic = new Anthropic({
   dangerouslyAllowBrowser: true,
 });
 
-export { transcribeAudio } from "./assemblyai";
-
 export async function summarizeText(text: string) {
+  if (!import.meta.env.VITE_ANTHROPIC_API_KEY) {
+    throw new Error("Anthropic API key is not configured");
+  }
+
   try {
     const response = await anthropic.messages.create({
       model: "claude-3-opus-20240229",

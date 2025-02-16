@@ -1,10 +1,13 @@
 import React, { useState } from "react";
 import { audioRecorder } from "@/lib/audioRecorder";
-import { transcribeAudio, summarizeText } from "@/lib/anthropic";
+import { summarizeText } from "@/lib/anthropic";
+import { transcribeAudio } from "@/lib/assemblyai";
 import RecordingSection from "./RecordingSection";
 import TranscriptionPanel from "./TranscriptionPanel";
 import RecordingsSidebar from "./RecordingsSidebar";
 import ProcessingOverlay from "./ProcessingOverlay";
+import { useToast } from "@/components/ui/use-toast";
+import { Toaster } from "@/components/ui/toaster";
 
 interface HomeProps {
   initialRecording?: {
@@ -14,6 +17,13 @@ interface HomeProps {
     timestamps?: Array<{ time: string; text: string }>;
   };
 }
+
+const checkApiKeys = () => {
+  const missingKeys = [];
+  if (!import.meta.env.VITE_ANTHROPIC_API_KEY) missingKeys.push("Anthropic");
+  if (!import.meta.env.VITE_ASSEMBLYAI_API_KEY) missingKeys.push("AssemblyAI");
+  return missingKeys;
+};
 
 const Home = ({
   initialRecording = {
@@ -26,7 +36,19 @@ const Home = ({
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingProgress, setProcessingProgress] = useState(0);
+  const { toast } = useToast();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  React.useEffect(() => {
+    const missingKeys = checkApiKeys();
+    if (missingKeys.length > 0) {
+      toast({
+        variant: "destructive",
+        title: "Missing API Keys",
+        description: `Please configure ${missingKeys.join(" and ")} API keys in .env file`,
+      });
+    }
+  }, []);
 
   const handleRecordingStart = () => {
     setIsRecording(true);
@@ -42,6 +64,9 @@ const Home = ({
     try {
       // Get the recorded audio blob
       const audioBlob = await audioRecorder.stopRecording();
+      if (!audioBlob) {
+        throw new Error("Failed to get audio recording");
+      }
       setProcessingProgress(20);
 
       if (!audioBlob || audioBlob.size === 0) {
@@ -83,7 +108,11 @@ const Home = ({
       console.error("Processing error:", error);
       setIsProcessing(false);
       setProcessingProgress(0);
-      // TODO: Show error message to user
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || "Failed to process recording",
+      });
     }
   };
 
@@ -143,6 +172,7 @@ const Home = ({
         progress={processingProgress}
         message="Processing your recording..."
       />
+      <Toaster />
     </div>
   );
 };

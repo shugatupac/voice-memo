@@ -21,6 +21,14 @@ const RecordingSection = ({
   const [audioData, setAudioData] = useState<number[]>(Array(50).fill(0.5));
   const [updateInterval, setUpdateInterval] = useState<number | null>(null);
 
+  React.useEffect(() => {
+    return () => {
+      if (updateInterval) {
+        clearInterval(updateInterval);
+      }
+    };
+  }, [updateInterval]);
+
   const handleRecordToggle = async () => {
     if (isRecording) {
       setIsRecording(false);

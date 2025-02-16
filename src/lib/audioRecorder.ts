@@ -8,6 +8,10 @@ class AudioRecorder {
   private dataArray: Uint8Array | null = null;
 
   async startRecording(): Promise<{ audioData: number[] }> {
+    // Clean up any existing recording session
+    if (this.recorder) {
+      await this.stopRecording();
+    }
     try {
       this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
